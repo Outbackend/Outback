@@ -35,44 +35,52 @@ def save_user(user):
 
 def get_user_by_id(_id):
     try:
-        response = user_table.get_item(FilterExpression=Attr('id').eq(_id))
-        if response['Item'][0] is None:
-            return True, None
+        response = user_table.scan(FilterExpression=Attr('id').eq(_id))
+        if response['Items'][0]:
+            return True, response['Items'][0]
         else:
-            return True, response['Item'][0]
+            return False, None
     except Exception as e:
         return False, str(e)
 
 
 def get_user_by_email(email):
     try:
-        response = user_table.get_item(FilterExpression=Attr('email').eq(email))
-        if response['Item'][0] is None:
-            return True, None
+        response = user_table.scan(FilterExpression=Attr('email').eq(email))
+        if response['Items'][0]:
+            return True, response['Items'][0]
         else:
-            return True, response['Item'][0]
+            return False, None
     except Exception as e:
         return False, str(e)
 
 
-def get_user_by_nickname(nickname):
+def update_user(_uuid, _id, data):
     try:
-        response = user_table.get_item(FilterExpression=Attr('nickname').eq(nickname))
-        if response['Item'][0] is None:
-            return True, None
-        else:
-            return True, response['Item'][0]
-    except Exception as e:
-        return False, str(e)
-
-
-def get_user_list():
-    try:
-        response = user_table.get_items()
-        if response['Item'] is None:
-            return True, None
-        else:
-            return True, response['Item']
+        response = user_table.update_item(
+            Key={
+                'uuid': _uuid,
+                'id': _id
+            },
+            UpdateExpression='SET #t1=:val1, #t2=:val2, #t3=:val3, #t4=:val4, #t5=:val5, #t6=:val6',
+            ExpressionAttributeNames={
+                '#t1': 'nickname',
+                '#t2': 'note',
+                '#t3': 'description',
+                '#t4': 'range',
+                '#t5': 'position',
+                '#t6': 'stack'
+            },
+            ExpressionAttributeValues={
+                ':val1': data['nickname'],
+                ':val2': data['note'],
+                ':val3': data['description'],
+                ':val4': data['range'],
+                ':val5': data['position'],
+                ':val6': data['stack']
+            }
+        )
+        return True, response
     except Exception as e:
         return False, str(e)
 
@@ -80,7 +88,7 @@ def get_user_list():
 def set_user_individual_data(_id, index, data):
     try:
         response = user_table.update_item(
-            key={
+            Key={
                 'id': _id
             },
             updateExpression='SET #index = :val1',
@@ -96,11 +104,24 @@ def set_user_individual_data(_id, index, data):
         return False, str(e)
 
 
-def add_project_log(_id):
+def add_project_log(_uuid, _id):
     try:
         response = user_table.update_item(
 
         )
         return True, response['Item']
+    except Exception as e:
+        return False, str(e)
+
+
+def delete_user(_uuid, _id):
+    try:
+        response = user_table.delete_item(
+            Key={
+                'uuid': _uuid,
+                'id': _id
+            }
+        )
+        return True, response
     except Exception as e:
         return False, str(e)

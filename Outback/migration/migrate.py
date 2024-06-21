@@ -76,9 +76,9 @@ def create_tables():
             }
         )
 
-    if user_table_name not in table_name:
-        user_table = dynamodb.create_table(
-            TableName=user_table_name,
+    if comment_table_name not in table_name:
+        comment_table = dynamodb.create_table(
+            TableName=comment_table_name,
             KeySchema=[
                 {
                     'AttributeName': 'uuid',
