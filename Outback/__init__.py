@@ -2,9 +2,8 @@ from flask import Flask
 from flask_cors import CORS
 from flask_restx import Api
 
-from Outback.api import add_namespace
+from Outback.api import add_namespaces
 from Outback.migration import migrate
-
 
 
 def create_app():

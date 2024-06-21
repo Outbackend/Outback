@@ -14,7 +14,7 @@ def save_user(user):
     dtime = int(time.time() * 1000000)
     item = {
         'uuid': str(uuid.uuid4()),
-        'id': (dtime * 100000000) + random.randint(0, 10000000),
+        'id': (dtime * 100000000) + random.randint(0, 99999999),
         'email': user['email'],
         'password': user['password'],
         'nickname': user['nickname'],
@@ -29,6 +29,17 @@ def save_user(user):
     try:
         response = user_table.put_item(Item=item)
         return True, response
+    except Exception as e:
+        return False, str(e)
+
+
+def get_user_by_id(_id):
+    try:
+        response = user_table.get_item(FilterExpression=Attr('id').eq(_id))
+        if response['Item'][0] is None:
+            return True, None
+        else:
+            return True, response['Item'][0]
     except Exception as e:
         return False, str(e)
 
@@ -80,5 +91,16 @@ def set_user_individual_data(_id, index, data):
                 ':val1': data
             }
         )
+        return True, response
     except Exception as e:
-        return True, str(e)
+        return False, str(e)
+
+
+def add_project_log(_id):
+    try:
+        response = user_table.update_item(
+
+        )
+        return True, response['Item']
+    except Exception as e:
+        return False, str(e)
