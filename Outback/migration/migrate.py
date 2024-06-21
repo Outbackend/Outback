@@ -4,10 +4,7 @@ from Outback.config import Config
 
 
 dynamodb = boto3.resource(
-    'dynamodb',
-    region_name=Config.t1,
-    aws_access_key_id=Config.t2,
-    aws_secret_access_key=Config.t3,
+    'dynamodb'
 )
 
 table_name = [table.name for table in dynamodb.tables.all()]
@@ -76,9 +73,9 @@ def create_tables():
             }
         )
 
-    if user_table_name not in table_name:
-        user_table = dynamodb.create_table(
-            TableName=user_table_name,
+    if comment_table_name not in table_name:
+        comment_table = dynamodb.create_table(
+            TableName=comment_table_name,
             KeySchema=[
                 {
                     'AttributeName': 'uuid',

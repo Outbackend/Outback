@@ -16,9 +16,10 @@ comment_table = dynamodb.Table(Config.COMMENT_TABLE)
 def save_project(project):
     now = datetime.now(timezone('Asia/Seoul'))
     dtime = int(time.time() * 1000000)
+    iid = (dtime * 100000000) + random.randint(10000001, 29999999)
     item = {
         'uuid': str(uuid.uuid4()),
-        'id': (dtime * 100000000) + random.randint(10000001, 30000000),
+        'id': iid,
         'name': project['name'],
         'description': project['description'],
         'category': project['category'],
@@ -29,7 +30,7 @@ def save_project(project):
         'publisher': project['publisher'],
         'endDate': project['endDate'],
         'modifiedDate': now.strftime('%Y-%m-%d %H:%M:%S'),
-        'comment': None,
+        'comment': [],
     }
     try:
         response = project_table.put_item(Item=item)
@@ -38,67 +39,58 @@ def save_project(project):
         return False, str(e)
 
 
-def add_comment(project_id, user_id, parent_id, content):
-    now = datetime.now(timezone('Asia/Seoul'))
-    dtime = int(time.time() * 1000000)
-    item = {
-        'uuid': str(uuid.uuid4()),
-        'id': (dtime * 100000000) + random.randint(30000001, 99999999),
-        'content': content,
-        'projectId': project_id,
-        'parentId': parent_id,
-        'userId': user_id,
-        'datetime': now.strftime('%Y-%m-%d %H:%M:%S')
-    }
+def get_project_by_id(project_id):
     try:
-        update_response = project_table.update_item(
-            Key={
-                'id': item['id']
-            },
-            UpdateExpression='SET #comment = list_append(#comment, :comment)',
-            ExpressionAttributeNames={
-                '#comment': 'comment'
-            },
-            ExpressionAttributeValues={
-                ':comment': item
-            },
-            ReturnValues='UPDATED_NEW'
+        response = project_table.scan(
+            FilterExpression=Attr('id').eq(project_id)
         )
-        add_response = comment_table.put_item(Item=item)
-        response = {'update_response': update_response, 'add_response': add_response}
-        return True, response
+        return True, response['Items'][0]
     except Exception as e:
         return False, str(e)
 
 
-def get_comment_list(project_id):
+def get_project_list():
     try:
-        response = comment_table.scan(
-            FilterExpression=Attr('projectId').eq(project_id)
-        )
-        return True, response['Items']
+        response = project_table.scan()
+        items = response['Items']
+        return True, items
     except Exception as e:
         return False, str(e)
 
 
-def set_user_individual_data(_id, index, data):
+def update_project(_uuid, _id, project):
     now = datetime.now(timezone('Asia/Seoul'))
     try:
         response = project_table.update_item(
-            key={
+            Key={
+                'uuid': _uuid,
                 'id': _id
             },
-            updateExpression='SET #index = :val1 modifiedDate = :val2',
+            UpdateExpression='SET #t1=:val1, #t2=:val2, #t3=:val3, #t4=:val4, #t5=:val5, #t6=:val6, #t7=:val7, #t8=:val8',
             ExpressionAttributeNames={
-                '#index': index
+                '#t1': 'name',
+                '#t2': 'description',
+                '#t3': 'stack',
+                '#t4': 'wanted',
+                '#t5': 'inNow',
+                '#t6': 'status',
+                '#t7': 'endDate',
+                '#t8': 'modifiedDate'
             },
             ExpressionAttributeValues={
-                ':val1': data,
-                ':val2': now.strftime('%Y-%m-%d %H:%M:%S')
+                ':val1': project['name'],
+                ':val2': project['description'],
+                ':val3': project['stack'],
+                ':val4': project['wanted'],
+                ':val5': project['inNow'],
+                ':val6': project['status'],
+                ':val7': project['endDate'],
+                ':val8': now.strftime('%Y-%m-%d %H:%M:%S'),
             }
         )
+        return True, response
     except Exception as e:
-        return True, str(e)
+        return False, str(e)
 
 
 def modify_position(_id, types, position, number):
@@ -124,6 +116,116 @@ def modify_position(_id, types, position, number):
             }
         )
 
+        return True, response
+    except Exception as e:
+        return False, str(e)
+
+
+def delete_project(_uuid, _id):
+    try:
+        response = project_table.delete_item(
+            Key={
+                'uuid': _uuid,
+                'id': _id
+            }
+        )
+        return True, response
+    except Exception as e:
+        return False, str(e)
+
+
+def add_comment(project_uuid, project_id, user_id, parent_id, content):
+    now = datetime.now(timezone('Asia/Seoul'))
+    dtime = int(time.time() * 1000000)
+    uid = str(uuid.uuid4())
+    iid = (dtime * 100000000) + random.randint(30000000, 99999999)
+    dt = now.strftime('%Y-%m-%d %H:%M:%S')
+    comment = {
+        'uuid': uid,
+        'id': iid,
+        'content': content,
+        'projectId': project_id,
+        'parentId': parent_id,
+        'userId': user_id,
+        'datetime': dt
+    }
+    project_comment = {
+        'uuid': uid,
+        'id': iid,
+    }
+    try:
+        update_response = project_table.update_item(
+            Key={
+                'uuid': project_uuid,
+                'id': project_id
+            },
+            UpdateExpression='SET #comment = list_append(#comment, :comment)',
+            ExpressionAttributeNames={
+                '#comment': 'comment'
+            },
+            ExpressionAttributeValues={
+                ':comment': [project_comment]
+            },
+            ReturnValues='UPDATED_NEW'
+        )
+        add_response = comment_table.put_item(Item=comment)
+        response = {'update_response': update_response, 'add_response': add_response}
+        return True, response
+    except Exception as e:
+        return False, str(e)
+
+
+def get_comment(_id):
+    try:
+        response = comment_table.scan(
+            FilterExpression=Attr('id').eq(_id)
+        )
+        return True, response['Items'][0]
+    except Exception as e:
+        return False, str(e)
+
+
+def get_comment_list(project_id):
+    try:
+        response = comment_table.scan(
+            FilterExpression=Attr('projectId').eq(project_id)
+        )
+        return True, response['Items']
+    except Exception as e:
+        return False, str(e)
+
+
+def update_comment(_uuid, _id, content):
+    now = datetime.now(timezone('Asia/Seoul'))
+    try:
+        comment_response = comment_table.update_item(
+            Key={
+                'uuid': _uuid,
+                'id': _id
+            },
+            UpdateExpression='SET #content = :content #datetime = :datetime',
+            ExpressionAttributeNames={
+                '#content': 'content',
+                'datetime': 'datetime'
+            },
+            ExpressionAttributeValues={
+                ':content': content,
+                ':datetime': now.strftime('%Y-%m-%d %H:%M:%S')
+            }
+        )
+        return True, comment_response
+    except Exception as e:
+        return False, str(e)
+
+
+def delete_comment(_uuid, _id):
+    try:
+        response = comment_table.delete_item(
+            Key={
+                'uuid': _uuid,
+                'id': _id
+            }
+        )
         return True, response
     except Exception as e:
         return False, str(e)
