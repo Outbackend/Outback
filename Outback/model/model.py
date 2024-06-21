@@ -68,8 +68,22 @@ class ProjectModel:
             'description': fields.String(required=True, description='Project description'),
             'category': fields.String(required=True, description='Project 분야'),
             'stack': fields.List(fields.String, required=True, description='Project stack'),
-            'wanted': fields.List(project_wanted, required=True, description='Project 구인'),
-            'inNow': fields.List(project_wanted, required=True, description='Project 현재 인원'),
+            'wanted': fields.List(
+                fields.Nested(
+                    description='User wanted',
+                    model=project_wanted,
+                ),
+                required=True,
+                description='Project 구인'
+            ),
+            'inNow': fields.List(
+                fields.Nested(
+                    description='Now in the project',
+                    model=project_wanted,
+                ),
+                required=True,
+                description='Project 현재 인원'
+            ),
             'status': fields.String(required=True, description='Project status'),
             'publisher': fields.String(required=True, description='Project publisher'),
             'endDate': fields.String(required=True, description='Project end date'),

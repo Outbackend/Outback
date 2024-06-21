@@ -46,7 +46,7 @@ class ProjectById(Resource):
             return response, 401
 
     @_project_api.doc(id='update_project', description='project update')
-    @_project.expect(_project, validate=True)
+    @_project_api.expect(_project, validate=True)
     def post(self, _id):
         data = request.json()
         flag, response = update_project(data)
@@ -55,9 +55,11 @@ class ProjectById(Resource):
         else:
             return response, 401
 
-    @_project_api.route('/comment')
-    @_project.expect(_comment, validate=True)
-    @_project_api.doc(id='add_comment', description='댓글 추가')
+
+@_project_api.route('/<int:_id>/comment')
+@_project_api.expect(_comment, validate=True)
+@_project_api.doc(id='add_comment', description='댓글 추가')
+class Comment(Resource):
     def post(self, _id):
         data = request.json()
         flag, response = add_comment(_id, data['userId'], data['parentId'], data['content'])
