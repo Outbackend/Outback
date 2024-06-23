@@ -11,6 +11,7 @@ class UserModel:
             'name': fields.String(description='Name of the joined project'),
             'description': fields.String(description='Description of the joined project'),
             'position': fields.String(description='Position of the joined project'),
+            'status': fields.String(description='Project status'),
         }
     )
     user = user_api.model(

@@ -11,10 +11,10 @@ user_table = dynamodb.Table(Config.USER_TABLE_NAME)
 
 
 def save_user(user):
-    dtime = int(time.time() * 1000000)
+    dtime = int(time.time() * 1000000 % 1000000000000)
     item = {
         'uuid': str(uuid.uuid4()),
-        'id': (dtime * 100000000) + random.randint(0, 99999999),
+        'id': (dtime * 1000000) + random.randint(0, 99999),
         'email': user['email'],
         'password': user['password'],
         'nickname': user['nickname'],

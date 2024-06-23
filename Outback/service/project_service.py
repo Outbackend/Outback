@@ -16,7 +16,7 @@ comment_table = dynamodb.Table(Config.COMMENT_TABLE)
 def save_project(project):
     now = datetime.now(timezone('Asia/Seoul'))
     dtime = int(time.time() * 1000000)
-    iid = (dtime * 100000000) + random.randint(10000001, 29999999)
+    iid = (dtime * 1000000) + random.randint(100001, 299999)
     item = {
         'uuid': str(uuid.uuid4()),
         'id': iid,
@@ -138,7 +138,7 @@ def add_comment(project_uuid, project_id, user_id, parent_id, content):
     now = datetime.now(timezone('Asia/Seoul'))
     dtime = int(time.time() * 1000000)
     uid = str(uuid.uuid4())
-    iid = (dtime * 100000000) + random.randint(30000000, 99999999)
+    iid = (dtime * 1000000) + random.randint(300000, 999999)
     dt = now.strftime('%Y-%m-%d %H:%M:%S')
     comment = {
         'uuid': uid,

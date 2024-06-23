@@ -18,6 +18,7 @@ class UserID(Resource):
     @_user_api.doc(id='get_user_by_id', description='id로 user 정보를 불러오는 API')
     def get(self, _id):
         flag, item = get_user_by_id(_id)
+        item['password'] = None
         if flag:
             decimal_to_float(item)
             return item
@@ -83,7 +84,7 @@ class Login(Resource):
             flag, user = get_user_by_email(email)
             if flag:
                 if password == user['password']:
-                    return {'message': 'logged in'}, 200
+                    return int(user['id']), 200
                 else:
                     return {'message': 'wrong password'}, 401
             else:
