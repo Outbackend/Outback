@@ -27,13 +27,11 @@ class UserID(Resource):
             return {'message': 'user not found'}, 404
 
     @_user_api.doc(id='update_user', description='user 정보 update')
-    @token_required
     def post(self, _id):
         data = request.json
         exist_flag, item = get_user_by_id(_id)
         if exist_flag:
             item = decimal_to_float(item)
-            print(item)
             flag, response = update_user(item['uuid'], item['id'], data)
             if flag:
                 return {'message': 'updated successfully'}, 200
@@ -114,13 +112,13 @@ class Login(Resource):
         password = data['password']
 
         try:
-            flag, token = login(email, password)
+            flag, token, userid = login(email, password)
             if flag:
-                return token, 200
+                return {'token': token, 'userid': userid, 'message': 'login success'}, 200
             else:
-                return token, 401
+                return {'token': token, 'userid': userid, 'message': token}, 401
         except Exception as e:
-            return {'message': str(e)}, 401
+            return {'token': None, 'userid': None, 'message': str(e)}, 401
 
 
 @_user_api.route('/logout')

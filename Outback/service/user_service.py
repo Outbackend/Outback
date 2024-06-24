@@ -73,10 +73,8 @@ def verify_email_resend(email):
 
 
 def login(email, password):
-    user = get_user_by_email(email)
-    if not user:
-        return False, {'message': 'User not found'}
-    else:
+    flag, user = get_user_by_email(email)
+    if flag:
         try:
             response = cognito.initiate_auth(
                 ClientId=Config.COGNITO_CLIENT_ID,
@@ -87,10 +85,13 @@ def login(email, password):
                 }
             )
             token = response['AuthenticationResult']['AccessToken']
-
-            return True, token
+            return True, token, int(user['id'])
+        except cognito.exceptions.NotAuthorizedException:
+            return False, "Id와 비밀번호가 일치하지 않습니다.", None
         except Exception as e:
-            return False, {'message': str(e)}
+            return False, str(e), None
+    else:
+        return False, '사용자를 찾을 수 없습니다.', None
 
 
 def get_user_by_id(_id):
