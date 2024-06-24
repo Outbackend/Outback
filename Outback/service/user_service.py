@@ -4,8 +4,9 @@ import random
 
 from boto3.dynamodb.conditions import Attr
 
+from .auth import hash_password
 from Outback.config import Config
-from Outback.migration import dynamodb
+from Outback.migration import dynamodb, cognito
 
 user_table = dynamodb.Table(Config.USER_TABLE_NAME)
 
@@ -16,7 +17,7 @@ def save_user(user):
         'uuid': str(uuid.uuid4()),
         'id': (dtime * 1000000) + random.randint(0, 99999),
         'email': user['email'],
-        'password': user['password'],
+        'password': hash_password(user['password']),
         'nickname': user['nickname'],
         'note': user['note'],
         'description': user['description'],
@@ -27,10 +28,69 @@ def save_user(user):
     }
 
     try:
-        response = user_table.put_item(Item=item)
+        db_response = user_table.put_item(Item=item)
+        cg_response = cognito.sign_up(
+            ClientId=Config.COGNITO_CLIENT_ID,
+            Username=user['email'],
+            Password=user['password'],
+            UserAttributes=[
+                {
+                    'Name': "email",
+                    'Value': user['email']
+                },
+                {
+                    'Name': "nickname",
+                    'Value': user['nickname']
+                }
+            ]
+        )
+        return True, cg_response
+    except Exception as e:
+        return False, str(e)
+
+
+def verify_email(email, cert_number):
+    try:
+        response = cognito.confirm_sign_up(
+            ClientId=Config.COGNITO_CLIENT_ID,
+            Username=email,
+            ConfirmationCode=cert_number
+        )
         return True, response
     except Exception as e:
         return False, str(e)
+
+
+def verify_email_resend(email):
+    try:
+        response = cognito.resend_confirmation_code(
+            ClientId=Config.COGNITO_CLIENT_ID,
+            Username=email
+        )
+        return True, response
+    except Exception as e:
+        return False, str(e)
+
+
+def login(email, password):
+    user = get_user_by_email(email)
+    if not user:
+        return False, {'message': 'User not found'}
+    else:
+        try:
+            response = cognito.initiate_auth(
+                ClientId=Config.COGNITO_CLIENT_ID,
+                AuthFlow='USER_PASSWORD_AUTH',
+                AuthParameters={
+                    'USERNAME': email,
+                    'PASSWORD': password
+                }
+            )
+            token = response['AuthenticationResult']['AccessToken']
+
+            return True, token
+        except Exception as e:
+            return False, {'message': str(e)}
 
 
 def get_user_by_id(_id):

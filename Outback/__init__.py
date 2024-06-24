@@ -3,14 +3,17 @@ from flask_cors import CORS
 from flask_restx import Api
 
 from Outback.api import add_namespaces
-from Outback.migration import migrate
+from Outback.migration import dynamodb, create_tables
+from Outback.service import bcrypt
 
 
 def create_app():
     app = Flask(__name__)
     app.logger.setLevel("INFO")
 
-    CORS(app, resources={r"/*": {"origins": "*"}})
+    # CORS(app, resources={r"/*": {"origins": "*"}})
+    CORS(app)
+    bcrypt.init_app(app)
 
     api = Api(
         app,
@@ -21,6 +24,6 @@ def create_app():
 
     add_namespaces(api)
 
-    migrate.create_tables()
+    create_tables()
 
     return app

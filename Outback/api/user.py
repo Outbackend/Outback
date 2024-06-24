@@ -3,12 +3,13 @@ from flask_restx import Resource
 
 from Outback.model import UserModel
 from Outback.service import (
-    save_user, get_user_by_id, get_user_by_email, update_user, delete_user,
-    decimal_to_float
+    save_user, login, verify_email, verify_email_resend, update_user, delete_user,
+    get_user_by_id, get_user_by_email, decimal_to_float, token_required
 )
 
 _user_api = UserModel.user_api
 _user = UserModel.user
+_login = UserModel.login_model
 _project_log = UserModel.user_project_log
 
 
@@ -26,6 +27,7 @@ class UserID(Resource):
             return {'message': 'user not found'}, 404
 
     @_user_api.doc(id='update_user', description='user 정보 update')
+    @token_required
     def post(self, _id):
         data = request.json
         exist_flag, item = get_user_by_id(_id)
@@ -68,27 +70,55 @@ class Auth(Resource):
             if flag:
                 return item, 200
             else:
-                return {'message': 'auth failed'}, 401
+                return {'message': item}, 401
+
+
+@_user_api.route('/verify')
+@_user_api.doc(id='Verify', description='이메일 인증')
+class Verify(Resource):
+    @_user_api.doc(id='email_verify', description='이메일 인증')
+    def post(self):
+        data = request.json
+        email = data['email']
+        cert_number = data['cert_number']
+
+        flag, response = verify_email(email, cert_number)
+        print(response)
+        if flag:
+            return {'message': 'email verified'}, 200
+        else:
+            return {'message': response}, 401
+
+
+@_user_api.route('/resend')
+@_user_api.doc(id='Resend', description='인증 이메일 재전송')
+class Resend(Resource):
+    @_user_api.doc(id='resend_email', description='인증 이메일 재전송')
+    def post(self):
+        data = request.json
+        flag, response = verify_email_resend(data['email'])
+        if flag:
+            return {'message': 'email resent'}, 200
+        else:
+            return {'message': response}, 401
 
 
 @_user_api.route('/login')
 @_user_api.doc(id='login', description='로그인 관련 api')
 class Login(Resource):
     @_user_api.doc(id='user_login', description='로그인')
+    @_user_api.expect(_login, validate=True)
     def post(self):
         data = request.json
         email = data['email']
         password = data['password']
 
         try:
-            flag, user = get_user_by_email(email)
+            flag, token = login(email, password)
             if flag:
-                if password == user['password']:
-                    return int(user['id']), 200
-                else:
-                    return {'message': 'wrong password'}, 401
+                return token, 200
             else:
-                return {'message': 'user not found'}, 404
+                return token, 401
         except Exception as e:
             return {'message': str(e)}, 401
 
