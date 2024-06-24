@@ -3,6 +3,13 @@ from flask_restx import Namespace, fields
 
 class UserModel:
     user_api = Namespace('User', description='User operations', path='/user')
+    login_model = user_api.model(
+        'Login',
+        {
+            'email': fields.String(required=True, example='email'),
+            'password': fields.String(required=True, example='password')
+        }
+    )
     user_project_log = user_api.model(
         'UserProjectLog',
         {
