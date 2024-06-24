@@ -17,7 +17,3 @@ class Config:
     COGNITO_USER_POOL_ID = os.environ.get('COGNITO_USER_POOL_ID')
     COGNITO_CLIENT_ID = os.environ.get('COGNITO_CLIENT_ID')
     COGNITO_CLIENT_SECRET = os.environ.get('COGNITO_CLIENT_SECRET')
-
-    AWS_REGION = os.environ.get('AWS_REGION')
-    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
