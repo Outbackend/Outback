@@ -180,6 +180,28 @@ def update_user(_uuid, _id, data):
         return False, str(e)
 
 
+def set_project_log(_id, _log):
+    try:
+        flag, user = get_user_by_id(_id)
+        if not flag:
+            return False, str("User not found")
+        print(_log)
+        response = user_table.update_item(
+            Key={
+                'uuid': user['uuid'],
+                'id': _id
+            },
+            UpdateExpression='SET projectLog = list_append(projectLog, :val1)',
+            ExpressionAttributeValues={
+                ':val1': [_log]
+            },
+            ReturnValues="UPDATED_NEW"
+        )
+        return True, response
+    except Exception as e:
+        return False, str(e)
+
+
 def delete_user(_uuid, _id):
     try:
         response = user_table.delete_item(

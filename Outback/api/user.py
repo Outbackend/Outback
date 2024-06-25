@@ -4,8 +4,8 @@ from flask_cognito import cognito_auth_required
 
 from Outback.model import UserModel
 from Outback.service import (
-    save_user, login, logout, verify_email, verify_email_resend, update_user, get_cognito_user_data, get_user_by_header,
-    get_user_by_id, get_user_by_email, decimal_to_float, delete_user_cognito, delete_user
+    save_user, login, logout, verify_email, verify_email_resend, update_user, get_user_by_header,
+    get_user_by_id, get_user_by_email, decimal_to_float, delete_user_cognito, delete_user, set_project_log
 )
 
 _user_api = UserModel.user_api
@@ -64,6 +64,23 @@ class UserID(Resource):
                 return {'message': 'delete failed'}, 401
         else:
             return {'message': 'user not found'}, 404
+
+
+@_user_api.route('/<int:_id>/projectlog')
+@_user_api.doc(id='UserProjectLog', description='user project log')
+class UserProjectLog(Resource):
+    @_user_api.doc(id='UserProjectLog', description='user project log')
+    @_user_api.expect(_project_log, validate=True)
+    @cognito_auth_required
+    def post(self, _id):
+        data = request.json
+        exist_flag, user = get_user_by_id(_id)
+        if exist_flag:
+            flag, response = set_project_log(_id, data)
+            if flag:
+                return {'message': 'set success'}, 200
+            else:
+                return response, 401
 
 
 @_user_api.route('/auth')

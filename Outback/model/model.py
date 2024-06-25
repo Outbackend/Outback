@@ -13,7 +13,6 @@ class UserModel:
     user_project_log = user_api.model(
         'UserProjectLog',
         {
-            'uuid': fields.String(description='UUID of the joined project'),
             'id': fields.Integer(description='ID of the joined project'),
             'name': fields.String(description='Name of the joined project'),
             'description': fields.String(description='Description of the joined project'),
