@@ -12,10 +12,10 @@ user_table = dynamodb.Table(Config.USER_TABLE_NAME)
 
 
 def save_user(user):
-    dtime = int(time.time() * 1000000 % 1000000000000)
+    dtime = int(time.time())
     item = {
         'uuid': str(uuid.uuid4()),
-        'id': (dtime * 1000000) + random.randint(0, 99999),
+        'id': (dtime * 100000) + random.randint(0, 9999),
         'email': user['email'],
         'password': hash_password(user['password']),
         'nickname': user['nickname'],
@@ -51,12 +51,15 @@ def save_user(user):
 
 def verify_email(email, cert_number):
     try:
-        response = cognito.confirm_sign_up(
+        cg_response = cognito.confirm_sign_up(
             ClientId=Config.COGNITO_CLIENT_ID,
             Username=email,
             ConfirmationCode=cert_number
         )
-        return True, response
+        db_flag, user = get_user_by_email(email)
+        if not db_flag:
+            return False, str("User not found")
+        return True, user
     except Exception as e:
         return False, str(e)
 
@@ -94,6 +97,16 @@ def login(email, password):
         return False, '사용자를 찾을 수 없습니다.', None
 
 
+def logout(token):
+    try:
+        response = cognito.global_sign_out(
+            AccessToken=token
+        )
+        return True, response
+    except Exception as e:
+        return False, str(e), None
+
+
 def get_user_by_id(_id):
     try:
         response = user_table.scan(FilterExpression=Attr('id').eq(_id))
@@ -114,6 +127,27 @@ def get_user_by_email(email):
             return False, None
     except Exception as e:
         return False, str(e)
+
+
+def get_cognito_user_data(token):
+    try:
+        response = cognito.get_user(AccessToken=token)
+        return True, response
+    except Exception as e:
+        return False, str(e)
+
+
+def get_user_by_header(header):
+    token = header.split(' ')[1]
+    cg_flag, cg_data = get_cognito_user_data(token)
+    if cg_flag:
+        email_flag, cg_user = get_user_by_email(cg_data['UserAttributes'][0]['Value'])
+        if email_flag:
+            return True, cg_user
+        else:
+            return False, None
+    else:
+        return False, None
 
 
 def update_user(_uuid, _id, data):
@@ -146,35 +180,6 @@ def update_user(_uuid, _id, data):
         return False, str(e)
 
 
-def set_user_individual_data(_id, index, data):
-    try:
-        response = user_table.update_item(
-            Key={
-                'id': _id
-            },
-            updateExpression='SET #index = :val1',
-            ExpressionAttributeNames={
-                '#index': index
-            },
-            ExpressionAttributeValues={
-                ':val1': data
-            }
-        )
-        return True, response
-    except Exception as e:
-        return False, str(e)
-
-
-def add_project_log(_uuid, _id):
-    try:
-        response = user_table.update_item(
-
-        )
-        return True, response['Item']
-    except Exception as e:
-        return False, str(e)
-
-
 def delete_user(_uuid, _id):
     try:
         response = user_table.delete_item(
@@ -182,6 +187,16 @@ def delete_user(_uuid, _id):
                 'uuid': _uuid,
                 'id': _id
             }
+        )
+        return True, response
+    except Exception as e:
+        return False, str(e)
+
+
+def delete_user_cognito(token):
+    try:
+        response = cognito.delete_user(
+            AccessToken=token
         )
         return True, response
     except Exception as e:

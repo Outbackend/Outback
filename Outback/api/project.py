@@ -1,11 +1,12 @@
 from flask import request
 from flask_restx import Resource
+from flask_cognito import cognito_auth_required, current_cognito_jwt
 
 from Outback.model import ProjectModel
 from Outback.service import (
-    get_project_list, get_project_by_id, get_comment, get_comment_list,
+    get_project_list, get_project_by_id, get_comment, get_comment_list, get_cognito_user_data,
     save_project, add_comment, update_project, update_comment, delete_project, delete_comment,
-    decimal_to_float
+    decimal_to_float, get_user_by_header
 )
 
 _project_api = ProjectModel.project_api
@@ -33,6 +34,7 @@ class ProjectList(Resource):
 class AddProject(Resource):
     @_project_api.doc(id='add_project', description='Project를 추가하는 api')
     @_project_api.expect(_project, validate=True)
+    @cognito_auth_required
     def post(self):
         data = request.json
         flag, response = save_project(data)
@@ -55,19 +57,32 @@ class Project(Resource):
 
     @_project_api.doc(id='update_project', description='project update')
     @_project_api.expect(_project, validate=True)
+    @cognito_auth_required
     def post(self, _id):
+        header = request.headers.get('Authorization')
+        cg_flag, cg_user = get_user_by_header(header)
         data = request.json
         exist_flag, item = get_project_by_id(_id)
-        flag, response = update_project(item['uuid'], item['id'], data)
-        if flag:
-            return decimal_to_float(response), 200
+        if exist_flag and cg_flag:
+            if item['publisher'] != cg_user['id']:
+                return {'message': 'user not matched'}, 401
+            flag, response = update_project(item['uuid'], item['id'], data)
+            if flag:
+                return decimal_to_float(response), 200
+            else:
+                return response, 401
         else:
-            return response, 401
+            return {'message': 'error'}, 401
 
     @_project_api.doc(id='delete_project', description='project delete')
+    @cognito_auth_required
     def delete(self, _id):
+        header = request.headers.get('Authorization')
+        cg_flag, cg_user = get_user_by_header(header)
         exist_flag, item = get_project_by_id(_id)
-        if exist_flag:
+        if exist_flag and cg_flag:
+            if item['publisher'] != cg_user['id']:
+                return {'message': 'user not matched'}, 401
             flag, response = delete_project(item['uuid'], item['id'])
             if flag:
                 return {'message': 'delete success'}, 200
@@ -91,10 +106,15 @@ class Comment(Resource):
             return items, 401
 
     @_project_api.doc(id='add_comment', description='댓글 추가')
+    @cognito_auth_required
     def post(self, _id):
+        header = request.headers.get('Authorization')
+        cg_flag, cg_user = get_user_by_header(header)
         data = request.json
         exist_flag, item = get_project_by_id(_id)
         if exist_flag:
+            if item['userId'] != cg_user['user_id']:
+                return {'message': "user not matched."}, 404
             flag, response = add_comment(item['uuid'], item['id'], data['userId'], data['parentId'], data['content'])
             if flag:
                 return {'message': 'success'}, 200
@@ -102,11 +122,16 @@ class Comment(Resource):
                 return response, 401
 
     @_project_api.doc(id='update_comment', description='댓글 수정')
+    @cognito_auth_required
     def update(self, _id):
+        header = request.headers.get('Authorization')
+        cg_flag, cg_user = get_user_by_header(header)
         data = request.json
         exist_flag, item = get_comment(data['id'])
         if exist_flag:
-            flag, response = update_comment(item['uuid'], item['td'], data['content'])
+            if item['userId'] != cg_user['user_id']:
+                return {'message': "user not matched."}, 404
+            flag, response = update_comment(item['uuid'], item['id'], data['content'])
             if flag:
                 return {'message': 'success'}, 200
             else:
@@ -115,10 +140,15 @@ class Comment(Resource):
             return {'message': 'comment not found'}, 401
 
     @_project_api.doc(id='delete_comment', description='댓글 삭제')
+    @cognito_auth_required
     def delete(self, _id):
+        header = request.headers.get('Authorization')
+        cg_flag, cg_user = get_user_by_header(header)
         data = request.json
         exist_flag, item = get_comment(data['commentId'])
         if exist_flag:
+            if item['userId'] != cg_user['user_id']:
+                return {'message': "user not matched."}, 404
             flag, response = delete_comment(item['uuid'], item['id'])
             if flag:
                 return {'message': 'success'}, 200
