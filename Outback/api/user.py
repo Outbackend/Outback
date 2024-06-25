@@ -1,10 +1,11 @@
 from flask import request
 from flask_restx import Resource
+from flask_cognito import cognito_auth_required
 
 from Outback.model import UserModel
 from Outback.service import (
-    save_user, login, verify_email, verify_email_resend, update_user, delete_user,
-    get_user_by_id, get_user_by_email, decimal_to_float, token_required
+    save_user, login, logout, verify_email, verify_email_resend, update_user, get_cognito_user_data, get_user_by_header,
+    get_user_by_id, get_user_by_email, decimal_to_float, delete_user_cognito, delete_user
 )
 
 _user_api = UserModel.user_api
@@ -19,20 +20,25 @@ class UserID(Resource):
     @_user_api.doc(id='get_user_by_id', description='id로 user 정보를 불러오는 API')
     def get(self, _id):
         flag, item = get_user_by_id(_id)
-        item['password'] = None
         if flag:
             decimal_to_float(item)
+            item['password'] = None
             return item
         else:
             return {'message': 'user not found'}, 404
 
     @_user_api.doc(id='update_user', description='user 정보 update')
+    @cognito_auth_required
     def post(self, _id):
+        header = request.headers.get('Authorization')
+        cg_flag, cg_user = get_user_by_header(header)
         data = request.json
-        exist_flag, item = get_user_by_id(_id)
+        exist_flag, user = get_user_by_id(_id)
         if exist_flag:
-            item = decimal_to_float(item)
-            flag, response = update_user(item['uuid'], item['id'], data)
+            if user['uuid'] != cg_user['uuid']:
+                return {'message': 'user not matched'}, 401
+            user = decimal_to_float(user)
+            flag, response = update_user(user['uuid'], user['id'], data)
             if flag:
                 return {'message': 'updated successfully'}, 200
             else:
@@ -41,14 +47,21 @@ class UserID(Resource):
             return {'message': 'user not found'}, 404
 
     @_user_api.doc(id='delete_user', description='user delete')
+    @cognito_auth_required
     def delete(self, _id):
-        exist_flag, item = get_user_by_id(_id)
+        header = request.headers.get('Authorization')
+        token = header.split(' ')[1]
+        cg_flag, cg_user = get_user_by_header(header)
+        exist_flag, user = get_user_by_id(_id)
         if exist_flag:
-            flag, response = delete_user(item['uuid'], item['id'])
-            if flag:
+            if user['uuid'] != cg_user['uuid']:
+                return {'message': 'user not matched'}, 401
+            db_flag, db_response = delete_user(user['uuid'], user['id'])
+            cg_flag, cg_response = delete_user_cognito(token)
+            if db_flag and cg_flag:
                 return {'message': 'delete success'}, 200
             else:
-                return response, 401
+                return {'message': 'delete failed'}, 401
         else:
             return {'message': 'user not found'}, 404
 
@@ -80,12 +93,12 @@ class Verify(Resource):
         email = data['email']
         cert_number = data['cert_number']
 
-        flag, response = verify_email(email, cert_number)
-        print(response)
+        flag, user = verify_email(email, cert_number)
+        userid = int(user['id'])
         if flag:
-            return {'message': 'email verified'}, 200
+            return {'message': 'email verified', 'user': userid}, 200
         else:
-            return {'message': response}, 401
+            return {'message': user, 'user': userid}, 401
 
 
 @_user_api.route('/resend')
@@ -113,6 +126,7 @@ class Login(Resource):
 
         try:
             flag, token, userid = login(email, password)
+            print(userid)
             if flag:
                 return {'token': token, 'userid': userid, 'message': 'login success'}, 200
             else:
@@ -125,9 +139,12 @@ class Login(Resource):
 @_user_api.doc(id='logout', description='로그아웃 관련 api')
 class Logout(Resource):
     @_user_api.doc(id='user_logout', description='로그아웃')
+    @cognito_auth_required
     def post(self):
-        access_token = request.headers.get('Authorization')
-        try:
+        header = request.headers.get('Authorization')
+        token = header.split(' ')[1]
+        flag, response = logout(token)
+        if flag:
             return {'message': 'logged out'}, 200
-        except Exception as e:
-            return {'message': str(e)}, 401
+        else:
+            return {'message': 'logout failed'}, 401
