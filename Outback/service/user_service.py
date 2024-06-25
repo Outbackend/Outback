@@ -37,10 +37,6 @@ def save_user(user):
                 {
                     'Name': "email",
                     'Value': user['email']
-                },
-                {
-                    'Name': "nickname",
-                    'Value': user['nickname']
                 }
             ]
         )
