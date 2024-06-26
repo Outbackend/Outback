@@ -37,11 +37,15 @@ class AddProject(Resource):
     @cognito_auth_required
     def post(self):
         data = request.json
-        flag, response = save_project(data)
-        if flag:
-            return response, 200
+        save_flag, project_id = save_project(data)
+        if save_flag:
+            get_flag, items = get_project_by_id(project_id)
+            if get_flag:
+                return decimal_to_float(items), 200
+            else:
+                return items, 200
         else:
-            return response, 401
+            return project_id, 401
 
 
 @_project_api.route('/<int:_id>')

@@ -56,7 +56,7 @@ class ProjectModel:
     comment = project_api.model(
         'Comment',
         {
-            'uuid' : fields.String(description='UUID of the comment'),
+            'uuid': fields.String(description='UUID of the comment'),
             'id': fields.Integer(description='ID of the comment'),
             'content': fields.String(required=True, description='Content of the comment'),
             'projectId': fields.Integer(required=True, description='Project id'),

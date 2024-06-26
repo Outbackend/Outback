@@ -33,8 +33,8 @@ def save_project(project):
         'comment': [],
     }
     try:
-        response = project_table.put_item(Item=item)
-        return True, response
+        project_id = project_table.put_item(Item=item)
+        return True, project_id
     except Exception as e:
         return False, str(e)
 
@@ -66,7 +66,7 @@ def update_project(_uuid, _id, project):
                 'uuid': _uuid,
                 'id': _id
             },
-            UpdateExpression='SET #t1=:val1, #t2=:val2, #t3=:val3, #t4=:val4, #t5=:val5, #t6=:val6, #t7=:val7, #t8=:val8',
+            UpdateExpression='SET #t1=:v1, #t2=:v2, #t3=:v3, #t4=:v4, #t5=:v5, #t6=:v6, #t7=:v7, #t8=:v8',
             ExpressionAttributeNames={
                 '#t1': 'name',
                 '#t2': 'description',
@@ -78,14 +78,14 @@ def update_project(_uuid, _id, project):
                 '#t8': 'modifiedDate'
             },
             ExpressionAttributeValues={
-                ':val1': project['name'],
-                ':val2': project['description'],
-                ':val3': project['stack'],
-                ':val4': project['wanted'],
-                ':val5': project['inNow'],
-                ':val6': project['status'],
-                ':val7': project['endDate'],
-                ':val8': now.strftime('%Y-%m-%d %H:%M:%S'),
+                ':v1': project['name'],
+                ':v2': project['description'],
+                ':v3': project['stack'],
+                ':v4': project['wanted'],
+                ':v5': project['inNow'],
+                ':v6': project['status'],
+                ':v7': project['endDate'],
+                ':v8': now.strftime('%Y-%m-%d %H:%M:%S'),
             }
         )
         return True, response
