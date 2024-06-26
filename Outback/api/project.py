@@ -39,6 +39,7 @@ class AddProject(Resource):
         data = request.json
         save_flag, project_id = save_project(data)
         if save_flag:
+            print(project_id)
             get_flag, items = get_project_by_id(project_id)
             if get_flag:
                 return decimal_to_float(items), 200

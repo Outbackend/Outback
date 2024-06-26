@@ -33,8 +33,8 @@ def save_project(project):
         'comment': [],
     }
     try:
-        project_id = project_table.put_item(Item=item)
-        return True, project_id
+        response = project_table.put_item(Item=item)
+        return True, iid
     except Exception as e:
         return False, str(e)
 
