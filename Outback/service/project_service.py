@@ -203,14 +203,14 @@ def update_comment(_uuid, _id, content):
                 'uuid': _uuid,
                 'id': _id
             },
-            UpdateExpression='SET #content = :content #datetime = :datetime',
+            UpdateExpression='SET #t1 = :v1, #t2 = :v2',
             ExpressionAttributeNames={
-                '#content': 'content',
-                'datetime': 'datetime'
+                '#t1': 'content',
+                '#t2': 'datetime'
             },
             ExpressionAttributeValues={
-                ':content': content,
-                ':datetime': now.strftime('%Y-%m-%d %H:%M:%S')
+                ':v1': content,
+                ':v2': now.strftime('%Y-%m-%d %H:%M:%S')
             }
         )
         return True, comment_response
