@@ -143,7 +143,6 @@ class Login(Resource):
 
         try:
             flag, token, userid = login(email, password)
-            print(userid)
             if flag:
                 return {'token': token, 'userid': userid, 'message': 'login success'}, 200
             else:

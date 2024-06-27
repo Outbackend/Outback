@@ -4,7 +4,7 @@ from flask_cognito import cognito_auth_required, current_cognito_jwt
 
 from Outback.model import ProjectModel
 from Outback.service import (
-    get_project_list, get_project_by_id, get_comment, get_comment_list, get_cognito_user_data,
+    get_project_list, get_project_by_id, get_comment, get_comment_list,
     save_project, add_comment, update_project, update_comment, delete_project, delete_comment,
     decimal_to_float, get_user_by_header
 )
