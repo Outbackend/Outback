@@ -100,7 +100,7 @@ def logout(token):
         )
         return True, response
     except Exception as e:
-        return False, str(e), None
+        return False, str(e)
 
 
 def get_user_by_id(_id):

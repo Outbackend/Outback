@@ -66,7 +66,7 @@ def update_project(_uuid, _id, project):
                 'uuid': _uuid,
                 'id': _id
             },
-            UpdateExpression='SET #t1=:v1, #t2=:v2, #t3=:v3, #t4=:v4, #t5=:v5, #t6=:v6, #t7=:v7, #t8=:v8',
+            UpdateExpression='SET #t1=:v1, #t2=:v2, #t3=:v3, #t4=:v4, #t5=:v5, #t6=:v6, #t7=:v7, #t8=:v8, #t9=:v9',
             ExpressionAttributeNames={
                 '#t1': 'name',
                 '#t2': 'description',
@@ -75,7 +75,8 @@ def update_project(_uuid, _id, project):
                 '#t5': 'inNow',
                 '#t6': 'status',
                 '#t7': 'endDate',
-                '#t8': 'modifiedDate'
+                '#t8': 'modifiedDate',
+                '#t9': 'category'
             },
             ExpressionAttributeValues={
                 ':v1': project['name'],
@@ -86,6 +87,7 @@ def update_project(_uuid, _id, project):
                 ':v6': project['status'],
                 ':v7': project['endDate'],
                 ':v8': now.strftime('%Y-%m-%d %H:%M:%S'),
+                ':v9': project['category']
             }
         )
         return True, response

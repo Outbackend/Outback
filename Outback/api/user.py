@@ -53,6 +53,8 @@ class UserID(Resource):
         token = header.split(' ')[1]
         cg_flag, cg_user = get_user_by_header(header)
         exist_flag, user = get_user_by_id(_id)
+        print(cg_user)
+        print(user)
         if exist_flag:
             if user['uuid'] != cg_user['uuid']:
                 return {'message': 'user not matched'}, 401
@@ -143,6 +145,7 @@ class Login(Resource):
 
         try:
             flag, token, userid = login(email, password)
+            print(userid)
             if flag:
                 return {'token': token, 'userid': userid, 'message': 'login success'}, 200
             else:
