@@ -117,7 +117,6 @@ class Comment(Resource):
         cg_flag, cg_user = get_user_by_header(header)
         data = request.json
         exist_flag, item = get_project_by_id(_id)
-        print(cg_user['id'])
         if exist_flag:
             if data['userId'] != cg_user['id']:
                 return {'message': "user not matched."}, 404
